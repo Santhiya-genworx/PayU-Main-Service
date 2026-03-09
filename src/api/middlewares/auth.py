@@ -16,21 +16,15 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/openapi.json",
             "/auth/users/login",
             "/auth/users/create",
-            "/health"
+            "/health",
         ]
         if request.url.path in public_urls:
             return await call_next(request)
 
-        auth_header = request.headers.get("Authorization")
+        token = request.cookies.get("access_token")
 
-        if auth_header:
-            scheme, _, token = auth_header.partition(" ")
-            if scheme != "Bearer":
-                raise HTTPException(status_code=401, detail="Invalid authentication scheme")
-        else:
-            token = request.cookies.get("access_token")
-            if not token:
-                raise HTTPException(status_code=401, detail="Authorization token missing")
+        if not token:
+            raise HTTPException(status_code=401, detail="Authorization token missing")
 
         try:
             payload = jwt.decode(
