@@ -8,7 +8,6 @@ url = settings.invoice_service_url
 
 @invoice_router.api_route("/process/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def invoice_proxy(path: str, request: Request):
-    print(path)
     async with httpx.AsyncClient(timeout=60.0) as client:
         # Forward the request to Invoice Service
         response = await client.request(
