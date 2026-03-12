@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     algorithm: str
 
     auth_service_url: str
-    invoice_service_url: str
+    process_service_url: str
 
     class Config:
         env_file=".env"

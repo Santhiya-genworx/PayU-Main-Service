@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.api.middlewares.auth import AuthMiddleware
 from src.api.middlewares.logging import LoggingMiddleware
 from src.api.rest.app import app_router
 
@@ -13,7 +12,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"], 
 )
-app.add_middleware(AuthMiddleware)
 app.add_middleware(LoggingMiddleware)
 
 app.include_router(app_router)
