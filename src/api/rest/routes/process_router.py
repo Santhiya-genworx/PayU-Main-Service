@@ -15,9 +15,6 @@ async def process_proxy(path: str, request: Request):
     if query:
         target_url = f"{target_url}?{query}"
 
-    print("PROCESS PROXY TO:", target_url)
-
-    # ✅ Detect content type
     content_type = request.headers.get("content-type", "")
 
     headers = {
@@ -28,7 +25,6 @@ async def process_proxy(path: str, request: Request):
 
     async with httpx.AsyncClient(timeout=None) as client:
 
-        # 🔥 CASE 1: FILE UPLOAD (multipart/form-data)
         if "multipart/form-data" in content_type:
             body = await request.body()
 
@@ -36,10 +32,9 @@ async def process_proxy(path: str, request: Request):
                 method=request.method,
                 url=target_url,
                 headers=headers,
-                content=body   # ✅ RAW BODY
+                content=body  
             )
 
-        # 🔥 CASE 2: JSON
         else:
             json_body = None
             if request.method in ["POST", "PUT", "PATCH"]:
@@ -54,8 +49,6 @@ async def process_proxy(path: str, request: Request):
                 headers=headers,
                 json=json_body
             )
-
-    print("PROCESS RESPONSE:", response.status_code)
 
     proxy_response = Response(
         content=response.content,
