@@ -10,9 +10,7 @@ url = settings.auth_service_url
 async def auth_proxy(path: str, request: Request):
 
     target_url = f"{url}/{path.rstrip('/')}"
-    print("PROXY TO:", target_url)
 
-    # ✅ Extract JSON safely
     json_body = None
     if request.method in ["POST", "PUT", "PATCH"]:
         try:
@@ -20,7 +18,6 @@ async def auth_proxy(path: str, request: Request):
         except:
             json_body = None
 
-    # ✅ Clean headers (VERY IMPORTANT)
     headers = {
         k: v
         for k, v in request.headers.items()
@@ -35,14 +32,12 @@ async def auth_proxy(path: str, request: Request):
             json=json_body
         )
 
-    print("AUTH RESPONSE:", response.status_code, response.text)
 
     proxy_response = Response(
         content=response.content,
         status_code=response.status_code,
     )
 
-    # ✅ Forward cookies properly
     for key, value in response.headers.multi_items():
         if key.lower() == "set-cookie":
             proxy_response.headers.append(key, value)
@@ -50,32 +45,3 @@ async def auth_proxy(path: str, request: Request):
             proxy_response.headers[key] = value
 
     return proxy_response
-# @auth_router.api_route("/auth/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-# async def auth_proxy(path: str, request: Request):
-    
-#     # Forward cookies from browser to auth service
-#     forwarded_headers = dict(request.headers)
-#     print(f"{url}/{path.rstrip('/')}")
-    
-#     async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
-#         response = await client.request(
-#             method=request.method,
-#             url=f"{url}/{path.rstrip('/')}",
-#             headers=forwarded_headers,
-#             content=await request.body()
-#         )
-#         print(response)
-
-#     proxy_response = Response(
-#         content=response.content,
-#         status_code=response.status_code,
-#     )
-
-#     # Forward all Set-Cookie headers from auth service back to browser
-#     for key, value in response.headers.multi_items():
-#         if key.lower() == "set-cookie":
-#             proxy_response.headers.append(key, value)
-#         elif key.lower() not in ("content-length", "transfer-encoding", "content-encoding"):
-#             proxy_response.headers[key] = value
-
-#     return proxy_response
