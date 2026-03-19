@@ -25,19 +25,18 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         
         token = None
+
         auth_header = request.headers.get("Authorization")
         if auth_header:
             token = auth_header.split(" ")[1]
         else:
             token = request.cookies.get("access_token")
-            if not token:
-                raise HTTPException(status_code=401, detail="Authorization token missing")
 
         user_id = None
         if token:
             try:
                 payload = jwt.decode(token, settings.access_secret_key, algorithms=[settings.algorithm])
-                user_id = payload["user_id"]
+                user_id = payload.get("user_id")
             except JWTError:
                 user_id = None
         

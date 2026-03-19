@@ -18,6 +18,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/auth/users/create",
             "/health",
         ]
+        
         if request.url.path in public_urls:
             return await call_next(request)
 
