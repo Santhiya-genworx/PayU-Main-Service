@@ -1,13 +1,15 @@
-from fastapi import APIRouter, Request, Response
-from src.core.config.settings import settings
 import httpx
+from fastapi import APIRouter, Request, Response
+
+from src.core.config.settings import settings
 
 process_router = APIRouter()
 
 url = settings.process_service_url
 
+
 @process_router.api_route("/process/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-async def process_proxy(path: str, request: Request):
+async def process_proxy(path: str, request: Request) -> Response:
 
     query = request.url.query
 
@@ -18,21 +20,15 @@ async def process_proxy(path: str, request: Request):
     content_type = request.headers.get("content-type", "")
 
     headers = {
-        k: v
-        for k, v in request.headers.items()
-        if k.lower() not in ["host", "content-length"]
+        k: v for k, v in request.headers.items() if k.lower() not in ["host", "content-length"]
     }
 
     async with httpx.AsyncClient(timeout=None) as client:
-
         if "multipart/form-data" in content_type:
             body = await request.body()
 
             response = await client.request(
-                method=request.method,
-                url=target_url,
-                headers=headers,
-                content=body  
+                method=request.method, url=target_url, headers=headers, content=body
             )
 
         else:
@@ -40,14 +36,11 @@ async def process_proxy(path: str, request: Request):
             if request.method in ["POST", "PUT", "PATCH"]:
                 try:
                     json_body = await request.json()
-                except:
+                except Exception:
                     json_body = None
 
             response = await client.request(
-                method=request.method,
-                url=target_url,
-                headers=headers,
-                json=json_body
+                method=request.method, url=target_url, headers=headers, json=json_body
             )
 
     proxy_response = Response(
@@ -56,7 +49,11 @@ async def process_proxy(path: str, request: Request):
     )
 
     for key, value in response.headers.items():
-        if key.lower() not in ("content-length", "transfer-encoding", "content-encoding"):
+        if key.lower() not in (
+            "content-length",
+            "transfer-encoding",
+            "content-encoding",
+        ):
             proxy_response.headers[key] = value
 
     return proxy_response
