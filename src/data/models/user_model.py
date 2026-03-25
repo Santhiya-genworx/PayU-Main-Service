@@ -1,0 +1,27 @@
+from __future__ import annotations
+
+from datetime import datetime
+from enum import Enum as PyEnum
+
+from sqlalchemy import Boolean, DateTime, Enum, Integer, String, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from src.data.clients.database import Base
+from src.data.models.log_model import Logs
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, unique=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(String(50), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, server_default="False")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    logs: Mapped[list[Logs]] = relationship("Logs", back_populates="user")
