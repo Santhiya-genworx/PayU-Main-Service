@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from src.api.middlewares.logging import LoggingMiddleware
 from src.api.rest.app import app_router
 
@@ -7,15 +8,19 @@ app = FastAPI(title="PayU - Main Service", version="1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://payu-frontend-717740758627.us-east1.run.app"],
+    allow_origins=[
+        "https://payu-frontend-717740758627.us-east1.run.app",
+        "http://localhost:5174",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"], 
+    allow_headers=["*"],
 )
 app.add_middleware(LoggingMiddleware)
 
 app.include_router(app_router)
 
+
 @app.get("/")
-def welcome():
+def welcome() -> dict[str, str]:
     return {"message": "Welcome to PayU - Main Service"}

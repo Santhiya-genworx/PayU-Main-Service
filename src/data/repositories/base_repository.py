@@ -1,27 +1,28 @@
-from typing import Type
-from fastapi import HTTPException
-from sqlalchemy import insert
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from typing import Any
 
-async def commit_transaction(db: AsyncSession):
+from sqlalchemy import insert
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.core.exceptions.exceptions import AppException, ConflictException
+
+
+async def commit_transaction(db: AsyncSession) -> None:
     try:
         await db.commit()
-        
-    except Exception as e:
+    except Exception as err:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Commit failed {str(e)}")
+        raise AppException(detail=f"Commit failed {str(err)}") from err
 
-async def insert_data(model: Type, db: AsyncSession, **kwargs):
+
+async def insert_data(model: type[Any], db: AsyncSession, **kwargs: Any) -> None:
     try:
         stmt = insert(model).values(**kwargs)
         await db.execute(stmt)
         await commit_transaction(db)
-
     except IntegrityError as err:
         await db.rollback()
-        raise HTTPException(status_code=409, detail=str(err))
-    
+        raise ConflictException(detail=str(err)) from err
     except SQLAlchemyError as err:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=str(err))
+        raise AppException(detail=str(err)) from err
