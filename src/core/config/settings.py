@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     auth_service_url: str
     process_service_url: str
 
+    origins: str
+
     model_config = SettingsConfigDict(env_file=".env")
 
 
