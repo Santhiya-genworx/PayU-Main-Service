@@ -1,4 +1,4 @@
-from __future__ import annotations
+"""Module: logging.py"""
 
 import time
 from collections.abc import Awaitable, Callable
@@ -8,7 +8,7 @@ from jose import JWTError, jwt
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
-from src.core.config.settings import settings
+from src.config.settings import settings
 from src.data.clients.database import AsyncSessionLocal
 from src.data.models.log_model import Logs, Methods
 from src.data.repositories.base_repository import insert_data
@@ -16,9 +16,15 @@ from src.observability.logging.logging_config import logger
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
+    """Middleware to log incoming requests and their outcomes.
+    This middleware captures the user ID from the JWT token (if available),
+    the HTTP method, the requested URL, the response status code, and the time taken to process the request. It logs this information for all POST, PUT, and DELETE requests to help with monitoring and debugging. If logging fails for any reason, it catches the exception and logs an error message without affecting the response sent to the client."""
+
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
+        """Authenticate incoming requests using JWT tokens.
+        This method checks for a JWT token in the Authorization header or cookies, validates it, and attaches the user information to the request state. If authentication fails, it returns a 401 response.        Additionally, it logs the user ID (if available), HTTP method, URL, response status code, and time taken for POST, PUT, and DELETE requests."""
         if request.method == "OPTIONS":
             return await call_next(request)
 

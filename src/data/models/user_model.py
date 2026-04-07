@@ -1,9 +1,8 @@
-from __future__ import annotations
+"""This module defines the User model for representing users in the database. The User model includes fields for id, name, email, password, role, is_active status, created_at timestamp, and updated_at timestamp. It also establishes a relationship with the Logs model to allow for easy access to logs associated with each user. The email field is unique to ensure that no two users can register with the same email address, and the password field is intended to store hashed passwords for security purposes. The role field can be used to differentiate between different types of users (e.g., admin, regular user), and the is_active field indicates whether a user's account is active or not.     By defining this model using SQLAlchemy's ORM features, we can easily interact with the users table in the database, perform CRUD operations, and manage relationships with other models such as Logs. This structured approach allows for efficient data management and retrieval while maintaining data integrity and security best practices."""
 
 from datetime import datetime
-from enum import Enum as PyEnum
 
-from sqlalchemy import Boolean, DateTime, Enum, Integer, String, func
+from sqlalchemy import Boolean, DateTime, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.data.clients.database import Base
@@ -11,6 +10,8 @@ from src.data.models.log_model import Logs
 
 
 class User(Base):
+    """SQLAlchemy model for the User entity. This model defines the structure of the users table in the database, including fields for id, name, email, password, role, is_active status, created_at timestamp, and updated_at timestamp. The model also establishes a relationship with the Logs model to allow for easy access to logs associated with each user. The email field is unique to ensure that no two users can register with the same email address, and the password field is intended to store hashed passwords for security purposes. The role field can be used to differentiate between different types of users (e.g., admin, regular user), and the is_active field indicates whether a user's account is active or not."""
+
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, unique=True, autoincrement=True)
