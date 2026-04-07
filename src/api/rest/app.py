@@ -1,3 +1,5 @@
+"""Module: app.py"""
+
 from fastapi import APIRouter
 
 from src.api.rest.routes.auth_router import auth_router

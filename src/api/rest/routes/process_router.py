@@ -1,7 +1,9 @@
+"""Module: process_router.py"""
+
 import httpx
 from fastapi import APIRouter, Request, Response
 
-from src.core.config.settings import settings
+from src.config.settings import settings
 
 process_router = APIRouter()
 
@@ -10,6 +12,14 @@ url = settings.process_service_url
 
 @process_router.api_route("/process/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def process_proxy(path: str, request: Request) -> Response:
+    """Proxy endpoint to forward requests to the PayU Processing Service API.
+    This endpoint captures all requests to the /process/{path} route and forwards them to the Processing Service API. It handles various HTTP methods and ensures that the request body, headers, and query parameters are correctly forwarded to the target API. The response from the Processing Service API is then returned to the client, preserving the status code and relevant headers. This allows for seamless integration between the Main Service and the Processing Service, enabling the Main Service to act as a gateway for processing-related operations without exposing the Processing Service API directly to clients.
+    Args:
+        path (str): The path to forward the request to, extracted from the URL.
+        request (Request): The incoming HTTP request from the client.
+    Returns:
+        Response: The HTTP response received from the Processing Service API, which is forwarded back to the client.
+    """
 
     query = request.url.query
 
