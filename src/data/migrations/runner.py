@@ -1,5 +1,6 @@
-from __future__ import annotations
- 
+"""This module implements a simple database migration system for managing schema changes in a PostgreSQL database. It defines a `MigrationFile` data class to represent individual migration files, and provides functions to discover migration files in a specified directory, apply pending migrations to the database, and ensure that the migration history is properly tracked in a `schema_migrations` table. The module also includes logic to validate applied migrations against their original SQL content using checksums, preventing accidental changes to already applied migrations.    Migration files are expected to follow a specific naming convention (`<version_number>_<name>.sql`) and contain valid SQL statements. The module handles splitting SQL files into individual statements while correctly accounting for comments and string literals, ensuring that complex SQL scripts can be executed without issues.    This migration system is designed to be simple and self-contained, making it easy to integrate into applications that require basic schema migration capabilities without relying on external libraries or tools.
+"""
+
 import hashlib
 import logging
 import re
@@ -17,6 +18,7 @@ _DEFAULT_MIGRATIONS_DIR = Path(__file__).resolve().parent / "versions"
  
 @dataclass(frozen=True, slots=True)
 class MigrationFile:
+    """Data class representing a database migration file. It contains the identifier, version number, name, checksum, SQL content, and file path of the migration. This class is used to encapsulate all relevant information about a migration file for processing and applying migrations to the database."""
     identifier: str
     version_number: str
     name: str
@@ -26,6 +28,13 @@ class MigrationFile:
  
  
 def discover_migrations(migrations_dir: Path | None = None) -> list[MigrationFile]:
+    """Discover migration files in the specified directory. This function scans the given directory for SQL files that match the expected naming convention, validates their contents, and returns a list of MigrationFile objects representing each valid migration. It ensures that there are no duplicate identifiers and that each migration file contains executable SQL statements.   If the directory does not exist or is not a directory, it raises an appropriate exception. The function also computes a checksum for each migration file to detect any changes to applied migrations in future runs.    Args:
+        migrations_dir: An optional Path to the directory containing migration files. If None, it defaults to the "versions" subdirectory relative to this script.    Returns:
+        A list of MigrationFile objects representing the discovered migrations, sorted by their version numbers.    Raises:
+        FileNotFoundError: If the specified migration directory does not exist.
+        NotADirectoryError: If the specified migration path is not a directory.
+        ValueError: If any migration file has an invalid name, is empty, or if there are duplicate migration identifiers.
+    """
     directory = migrations_dir or _DEFAULT_MIGRATIONS_DIR
     if not directory.exists():
         raise FileNotFoundError(f"Migration directory does not exist: {directory}")
@@ -70,6 +79,11 @@ async def apply_migrations(
     conn: AsyncConnection,
     migrations_dir: Path | None = None,
 ) -> None:
+    """Apply pending migrations to the database. This function connects to the database and applies any migrations that have not yet been applied, as determined by the records in the `schema_migrations` table. It ensures that each migration is applied in order and that the migration history is properly tracked. If a migration has already been applied, it validates that the checksum matches the original SQL content to detect any changes.    Args:
+        conn: An active AsyncConnection to the database where migrations should be applied.
+        migrations_dir: An optional Path to the directory containing migration files. If None, it defaults to the "versions" subdirectory relative to this script.    Raises:
+        RuntimeError: If a migration has already been applied but its checksum does not match the original SQL content, indicating that the migration file has been modified after being applied.
+    """
     migrations = discover_migrations(migrations_dir)
     await _ensure_schema_migrations_table(conn)
  
@@ -122,6 +136,10 @@ async def apply_migrations(
  
  
 async def _ensure_schema_migrations_table(conn: AsyncConnection) -> None:
+    """Ensure that the schema_migrations table exists in the database. This function creates the `schema_migrations` table if it does not already exist, and adds any missing columns that are required for tracking migration history. The table is used to store records of applied migrations, including their version identifiers, version numbers, names, checksums, and timestamps of when they were applied.    Args:
+        conn: An active AsyncConnection to the database where the `schema_migrations` table should be ensured.    Raises:
+        RuntimeError: If there is an error creating the `schema_migrations` table or adding necessary columns.
+    """
     await conn.exec_driver_sql(
         """
         CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -149,6 +167,12 @@ async def _validate_or_backfill_migration_record(
     migration: MigrationFile,
     existing: dict[str, str | None],
 ) -> None:
+    """Validate an existing migration record against the migration file, or backfill missing information. This function checks if the checksum of an already applied migration matches the checksum of the current migration file. If there is a mismatch, it raises a RuntimeError to prevent potential issues caused by modified migration files. If the record is missing version number, name, or checksum, it backfills this information in the database to ensure that the migration history is complete and accurate.    Args:
+        conn: An active AsyncConnection to the database where the migration record should be validated or backfilled.
+        migration: The MigrationFile object representing the migration being validated.
+        existing: A dictionary containing the existing migration record from the database, with keys "version_number", "name", and "checksum".    Raises:
+        RuntimeError: If the checksum of the existing migration record does not match the checksum of the migration file, indicating that the migration file has been modified after being applied.
+    """
     checksum = existing.get("checksum")
     if checksum:
         if checksum != migration.checksum:
@@ -179,6 +203,10 @@ async def _validate_or_backfill_migration_record(
  
  
 def _split_sql_statements(sql: str) -> list[str]:
+    """Split a SQL script into individual statements. This function takes a string containing SQL commands and splits it into separate statements based on semicolons, while correctly handling comments, string literals, and dollar-quoted strings. It ensures that semicolons within comments or string literals do not cause incorrect splitting of statements. The resulting list contains clean SQL statements that can be executed individually.    Args:
+        sql: A string containing the SQL script to be split into statements.    Returns:
+        A list of individual SQL statements extracted from the input script, with leading and trailing whitespace removed. Empty statements are filtered out.
+    """
     statements: list[str] = []
     current: list[str] = []
     i = 0
